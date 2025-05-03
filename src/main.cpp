@@ -23,21 +23,30 @@
  */
 
 
- #include <Arduino.h>
- #include "APP_LED.hpp"
- #include "APP_SERVO.hpp"
- 
- void setup()
- {
-     delay(3000);
-     Serial.begin(115200);
- 
-    //  APP_LED::begin();
-     APP_SERVO::begin();
- }
- 
- void loop()
- {
-    //  APP_LED::update();
-     APP_SERVO::update();
- }
+#include <Arduino.h>
+#include "APP_LED.hpp"
+#include "APP_SERVO.hpp"
+#include "APP_TIMER.hpp"
+#include "APP_BLINKY.hpp"
+
+
+
+
+void setup()
+{
+    delay(3000);
+    Serial.begin(115200);
+
+
+  //  APP_LED::begin();
+    APP_SERVO::begin();
+    APP_BLINKY::init();
+}
+
+void loop()
+{
+
+  //  APP_LED::update();
+    // APP_SERVO::update();
+    APP_BLINKY::process();
+}
