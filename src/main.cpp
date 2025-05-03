@@ -32,12 +32,12 @@
      delay(3000);
      Serial.begin(115200);
  
-     APP_LED::begin();
+    //  APP_LED::begin();
      APP_SERVO::begin();
  }
  
  void loop()
  {
-     APP_LED::update();
+    //  APP_LED::update();
      APP_SERVO::update();
  }
