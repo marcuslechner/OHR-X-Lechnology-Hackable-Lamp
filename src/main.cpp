@@ -1,43 +1,68 @@
-#include <Arduino.h>
+/*
+ * File:        main.cpp
+ * Author:      Marcus Lechner
+ * Created:     2025-03-22
+ * Description: Main Application code
+ * License:     Custom MIT License (Non-Commercial + Beerware)
 
-#include <FastLED.h>
+    Copyright (c) [2025] [Marcus Lechner]
 
-// FastLED "100-lines-of-code" demo reel, showing just a few 
-// of the kinds of animation patterns you can quickly and easily 
-// compose using FastLED.  
-//
-// This example also shows one easy way to define multiple 
-// animations patterns and have them automatically rotate.
-//
-// -Mark Kriegsman, December 2014
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), 
+    to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+    and/or sell copies of the Software, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+    The Software may NOT be used for commercial purposes.
+    If you find this software useful and we meet someday, you can buy me a beer (or a beverage of your choice) in return.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+    FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR 
+    OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+    DEALINGS IN THE SOFTWARE.
+
+ */
 
 
-#define DATA_PIN    4
-//#define CLK_PIN   4
-#define LED_TYPE    WS2812
-#define COLOR_ORDER GRB
-#define NUM_LEDS    24
-CRGB leds[NUM_LEDS];
-
-#define BRIGHTNESS          255
-#define FRAMES_PER_SECOND  120
-
-#include <ESP32Servo.h>
+ #include <Arduino.h>
+ #include <FastLED.h>
+ #include <ESP32Servo.h>
  
-Servo myservo;  // create servo object to control a servo
+ // ==============================
+ // LED Strip Configuration
+ // ==============================
  
-// Possible PWM GPIO pins on the ESP32: 0(used by on-board button),2,4,5(used by on-board LED),12-19,21-23,25-27,32-33 
-int servoPin = 18;      // GPIO pin used to connect the servo control (digital out)
-// Possible ADC pins on the ESP32: 0,2,4,12-15,32-39; 34-39 are recommended for analog input
-int potPin = 34;        // GPIO pin used to connect the potentiometer (analog in)
-int ADC_Max = 4096;     // This is the default ADC max value on the ESP32 (12 bit ADC width);
-                        // this width can be set (in low-level oode) from 9-12 bits, for a
-                        // a range of max values of 512-4096
-  
-int val;    // variable to read the value from the analog pin
-int previous_val = 0;
-int steps_til_release = 0;
-int servo_position = 0;
+ #define DATA_PIN        4
+ #define LED_TYPE        WS2812
+ #define COLOR_ORDER     GRB
+ #define NUM_LEDS        24
+ #define BRIGHTNESS      255
+ #define FRAMES_PER_SECOND 120
+ 
+ CRGB leds[NUM_LEDS];
+ 
+ // ==============================
+ // Servo Configuration
+ // ==============================
+ 
+ Servo myservo;                 // Servo control object
+#define SERVO_PIN 18       // GPIO pin for servo signal (digital output)
+ 
+ // ==============================
+ // Potentiometer Configuration
+ // ==============================
+ 
+#define POT_PIN 34         // GPIO pin for potentiometer (analog input)
+#define ADC_MAX 4096      // 12-bit ADC (range 0-4095), configurable 9–12 bits
+ 
+ // ==============================
+ // State Variables
+ // ==============================
+ 
+ int val = 0;                   // Current analog reading
+ int previous_val = 0;          // Previous reading
+ int steps_til_release = 0;     // Placeholder for control logic
+ int servo_position = 0;        // Last commanded servo position
+ 
 
 void rainbow(void);
 void nextPattern(void);
@@ -49,7 +74,8 @@ void bpm(void);
 void addGlitter(fract8 chanceOfGlitter);
 
 
-void setup() {
+void setup() 
+{
   delay(3000); // 3 second delay for recovery
 
   	// Allow allocation of all timers
@@ -59,7 +85,7 @@ void setup() {
 	ESP32PWM::allocateTimer(2);
 	ESP32PWM::allocateTimer(3);
   myservo.setPeriodHertz(50);// Standard 50hz servo
-  myservo.attach(servoPin, 500, 2400);   // attaches the servo on pin 18 to the servo object
+  myservo.attach(SERVO_PIN, 500, 2400);   // attaches the servo on pin 18 to the servo object
                                          // using SG90 servo min/max of 500us and 2400us
                                          // for MG995 large servo, use 1000us and 2000us,
                                          // which are the defaults, so this line could be
@@ -75,35 +101,44 @@ void setup() {
 
 
 // List of patterns to cycle through.  Each is defined as a separate function below.
-typedef void (*SimplePatternList[])();
-SimplePatternList gPatterns = { rainbow, rainbowWithGlitter, confetti, sinelon, juggle, bpm };
+typedef void (*SimplePatternList[])(); //type definition of an array of function pointers that take void param and return void
+SimplePatternList gPatterns = { 
+  rainbow, rainbowWithGlitter, confetti, sinelon, juggle, bpm 
+};
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
   
 void loop()
 {
+
+  //APP_ANIMATION_PROCESS();
+  //HDW_SERVO_PROCESS();
   // Call the current pattern function once, updating the 'leds' array
-  gPatterns[gCurrentPatternNumber]();
+  // gPatterns[gCurrentPatternNumber]();
 
-  // send the 'leds' array out to the actual LED strip
-  FastLED.show();  
-  // insert a delay to keep the framerate modest
-  FastLED.delay(1000/FRAMES_PER_SECOND); 
+  // // send the 'leds' array out to the actual LED strip
+  // FastLED.show();  
+  // // insert a delay to keep the framerate modest
+  // FastLED.delay(1000/FRAMES_PER_SECOND); 
 
-  // do some periodic updates
-  EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
-  EVERY_N_SECONDS( 10 ) { nextPattern(); } // change patterns periodically
+  // // do some periodic updates
+  // EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
+  // EVERY_N_SECONDS( 10 ) { nextPattern(); } // change patterns periodically
+      // GPIO pin for potentiometer (analog input)
 
-
-  // val = analogRead(potPin);            // read the value of the potentiometer (value between 0 and 1023)
-  // val = map(val, 250, ADC_Max-250, 60, 100 );     // scale it to use it with the servo (value between 0 and 180) 
+  val = analogRead(POT_PIN);            // read the value of the potentiometer (value between 0 and 1023)
+  val = map(val, 250, ADC_MAX-250, 60, 100 );     // scale it to use it with the servo (value between 0 and 180) 
 
   // servo_position = myservo.read();
   // Serial.println(servo_position);
-  // // Serial.println(previous_val);
-  // // Serial.println("val %d", val);
+  // Serial.println(previous_val);
+  Serial.print("val ");
+  Serial.println(val);
 
+  myservo.write(val); 
+
+  delay(100);
   // if(abs(val-previous_val) > 1)
   // {
   //     myservo.write(val);                  // set the servo position according to the scaled value
@@ -122,7 +157,7 @@ void loop()
   // }
 }
 
-#define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
+#define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0])) //TODO: where does it get this?
 
 void nextPattern()
 {
