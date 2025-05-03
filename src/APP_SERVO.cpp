@@ -11,11 +11,15 @@
 #include <Arduino.h>
 #include <ESP32Servo.h>
 
-namespace
-{
+namespace //unamed (anonymous) namespace, everything inside this namespace is private to this.cpp file
+{  
     constexpr int SERVO_PIN = 18;
     constexpr int POT_PIN = 34;
     constexpr int ADC_MAX = 4096;
+    //constexpr replaces #define, it can have a datatype assigned to it which is good for static analysis
+    //constexpr replaces const, it is evaluated at compile time and guarantees the value, const int = analog_read() can be any value 
+    //but stays constant after declaration 
+    //constexpr fully and safely replace #define
 
     Servo myservo;
     int previous_val = 0;
