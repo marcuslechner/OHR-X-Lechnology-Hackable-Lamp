@@ -38,15 +38,15 @@ void setup()
     Serial.begin(115200);
 
 
-  //  APP_LED::begin();
-    APP_SERVO::begin();
+  //  APP_LED::init();
+    APP_SERVO::init();
     APP_BLINKY::init();
 }
 
 void loop()
 {
 
-  //  APP_LED::update();
-    // APP_SERVO::update();
+    //  APP_LED::process();
+    APP_SERVO::process();
     APP_BLINKY::process();
 }

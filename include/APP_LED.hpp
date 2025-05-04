@@ -11,8 +11,8 @@
 
 namespace APP_LED
 {
-    void begin();
-    void update();
+    void init();
+    void process();
 }
 
 #endif // APP_LED_HPP
