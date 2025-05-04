@@ -1,4 +1,10 @@
-
+/*
+ * File:        APP_BLINKY.cpp
+ * Author:      Marcus Lechner
+ * Created:     2025-05-03
+ * Description: LED blinking application using a timer abstraction for toggling state at regular intervals.
+ * License:     Custom MIT License (Non-Commercial + Beerware)
+ */
 
 #include "APP_BLINKY.hpp"
 #include "APP_TIMER.hpp"
@@ -10,9 +16,7 @@ namespace
     const int BLINK_INTERVAL = 500; // in milliseconds
     unsigned long previousMillis = 0;
     bool ledState = false;
-    Timer blink_timer(1000,true);
-
-
+    Timer blink_timer(500,true);
 }
 
 void APP_BLINKY::init()

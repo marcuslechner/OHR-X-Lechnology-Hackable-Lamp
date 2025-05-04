@@ -90,13 +90,13 @@ namespace
     }
 }
 
-void APP_LED::begin()
+void APP_LED::init()
 {
     FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
     FastLED.setBrightness(BRIGHTNESS);
 }
 
-void APP_LED::update()
+void APP_LED::process()
 {
     gPatterns[gCurrentPattern]();
     FastLED.show();

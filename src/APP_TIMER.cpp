@@ -1,3 +1,11 @@
+/*
+ * File:        APP_TIMER.cpp
+ * Author:      Marcus Lechner
+ * Created:     2025-03-15
+ * Description: Implementation of a non-blocking software timer for embedded applications.
+ * License:     Custom MIT License (Non-Commercial + Beerware)
+ */
+
 #include "APP_TIMER.hpp"
 #include <Arduino.h>
 
