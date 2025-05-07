@@ -6,15 +6,24 @@
  * License:     Custom MIT License (Non-Commercial + Beerware)
  */
 
- #include "APP_LED.hpp"
+#include "APP_LED.hpp"
+#include "APP_TIMER.hpp"
 #include <FastLED.h>
 
 namespace
 {
-    constexpr int DATA_PIN = 4;
-    constexpr int NUM_LEDS = 24;
-    constexpr int BRIGHTNESS = 255;
-    constexpr int FRAMES_PER_SECOND = 120;
+    //namespace for private variables and functions
+    //anonymous namespace, everything inside this namespace is private to this.cpp file
+    //this is a good practice to avoid name collisions and keep the code organized
+
+    //namespace keeps all symbols(functions, variables, constants, class or objects) private and ensurese they all have internal linkcage
+
+
+    constexpr uint8_t DATA_PIN = 4;
+    constexpr uint8_t NUM_LEDS = 24;
+    constexpr uint8_t BRIGHTNESS = 32;
+    constexpr uint8_t FRAMES_PER_SECOND = 120;
+    constexpr uint8_t FRAME_DELAY_MS = (1000 + (FRAMES_PER_SECOND / 2)) / FRAMES_PER_SECOND; //round up to the nearest ms with integer division
 
     void rainbow();
     void rainbowWithGlitter();
@@ -23,11 +32,22 @@ namespace
     void juggle();
     void bpm();
 
-    CRGB leds[NUM_LEDS];
+    Timer led_timer(FRAME_DELAY_MS, true); // 8ms timer for LED animation
+
+    CRGB leds[NUM_LEDS]; //RGB pixel obkject array, each pixel object has 3 uint8_t values for red, green and blue
+    //could just make a struct of a pixel with 3 uint8_t values
     uint8_t gCurrentPattern = 0;
     uint8_t gHue = 0;
 
     using PatternFn = void (*)();
+
+    //------------typedef vs using and type aliases------------------//
+    //PattenFn is a type alias for a function pointer type
+    //"using" is a modern C++ keyword that is essentially the replacement for typedef
+    //it is more readable and allows for more complex type definitions
+    //has template support, so it can be used with templates and other type aliases
+    //classically it would be typedef void (*PatternFn)(); but using is more readable and modern C++
+
     PatternFn gPatterns[] = 
     {
         rainbow, rainbowWithGlitter, confetti, sinelon, juggle, bpm
@@ -98,10 +118,20 @@ void APP_LED::init()
 
 void APP_LED::process()
 {
-    gPatterns[gCurrentPattern]();
-    FastLED.show();
-    FastLED.delay(1000 / FRAMES_PER_SECOND);
+    if (led_timer.expired())
+    {
+        // printf("LED timer expired\n");
+        gPatterns[gCurrentPattern]();
+        FastLED.show(); //updates fastled interal clock
+    }
 
-    EVERY_N_MILLISECONDS(20) { gHue++; }
-    EVERY_N_SECONDS(10) { nextPattern(); }
+    EVERY_N_MILLISECONDS(20) 
+    { 
+        gHue++; 
+    }
+
+    EVERY_N_SECONDS(10) 
+    { 
+        nextPattern(); 
+    }
 }

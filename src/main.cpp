@@ -38,7 +38,7 @@ void setup()
     Serial.begin(115200);
 
 
-  //  APP_LED::init();
+    APP_LED::init();
     APP_SERVO::init();
     APP_BLINKY::init();
 }
@@ -46,7 +46,7 @@ void setup()
 void loop()
 {
 
-    //  APP_LED::process();
+    APP_LED::process();
     APP_SERVO::process();
     APP_BLINKY::process();
 }
