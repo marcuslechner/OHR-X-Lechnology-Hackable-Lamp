@@ -15,12 +15,20 @@ Timer::Timer(unsigned long intervalMs, bool startNow)
       _enabled(startNow)
 {}
 
+//----------constructor initializer list lesson----------//
+// the above is a constructor initializer list.
+// the constructor initializer list is a special syntax in C++ that allows you to initialize member variables of a class before the constructor body runs
+// it directly iniitiates member values of the class
+// does it before the constructor body runs
+// its more efficient to diretly initialize vs assigniment in the body
+// some memebers can only be initialized in the initializer list
+// for example, const members must be initialized in the initializer list
+
 void Timer::start()
 {
     _lastTime = millis();
     _enabled = true;
 }
-
 void Timer::stop()
 {
     _enabled = false;
