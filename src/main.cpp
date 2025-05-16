@@ -28,6 +28,7 @@
 #include "APP_SERVO.hpp"
 #include "APP_TIMER.hpp"
 #include "APP_BLINKY.hpp"
+#include "APP_BLE.hpp"
 
 
 
@@ -37,16 +38,18 @@ void setup()
     delay(3000);
     Serial.begin(115200);
 
-
+    Serial.println("Starting up...");
+    APP_BLINKY::init();   
+    APP_BLE::init();
     APP_LED::init();
-    APP_SERVO::init();
-    APP_BLINKY::init();
+    // APP_SERVO::init();
+
 }
 
 void loop()
 {
-
-    APP_LED::process();
-    APP_SERVO::process();
     APP_BLINKY::process();
+    APP_BLE::process();
+    APP_LED::process();
+    // APP_SERVO::process();
 }
