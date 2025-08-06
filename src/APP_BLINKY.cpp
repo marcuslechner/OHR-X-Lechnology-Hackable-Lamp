@@ -31,5 +31,6 @@ void APP_BLINKY::process()
     {
         ledState = !ledState;
         digitalWrite(LED_PIN, ledState ? HIGH : LOW);
+        // Serial.printf("LED is now %s\n", ledState ? "ON" : "OFF");
     }
 }
