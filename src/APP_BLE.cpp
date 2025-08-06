@@ -23,19 +23,27 @@ namespace APP_BLE
 
 
         BLECharacteristic* servoChar = nullptr;
-        BLECharacteristic* ledChar = nullptr;
+        BLECharacteristic* txChar = nullptr;
 
         class My_Characteristic_Callbacks : public BLECharacteristicCallbacks
         {
             void onWrite(BLECharacteristic* pChar) override
             {
+                Serial.println("[BLE] Characteristic written");
                 std::string value = pChar->getValue();
+
+                if(txChar)
+                {
+                    txChar->setValue(value);
+                    txChar->notify();
+                    Serial.printf("[BLE] LED pattern set to: %s\n", value.c_str());
+                }
                 if (pChar == servoChar)
                 {
                     // TODO: Pass angle to APP_SERVO
                     Serial.printf("[BLE] Servo set to: %s\n", value.c_str());
                 }
-                else if (pChar == ledChar)
+                else if (pChar == txChar)
                 {
                     // TODO: Pass pattern to APP_LED
                     Serial.printf("[BLE] LED pattern set to: %s\n", value.c_str());
@@ -58,12 +66,16 @@ namespace APP_BLE
         // BLE spec does not enforce data types, its just seen as a byte array
         // Characteristic Permissions ≠ Bidirectional Control
         servoChar = service->createCharacteristic(SERVO_CHAR_UUID, BLECharacteristic::PROPERTY_WRITE);
-        ledChar = service->createCharacteristic(
-            LED_CHAR_UUID, BLECharacteristic::PROPERTY_WRITE);
+        servoChar->setCallbacks(new My_Characteristic_Callbacks());
+        
+
+        txChar = service->createCharacteristic(LED_CHAR_UUID, BLECharacteristic::PROPERTY_NOTIFY);
 
         // setting up function callbacks to process the data that is written to the characteristic
-        servoChar->setCallbacks(new My_Characteristic_Callbacks());
-        ledChar->setCallbacks(new My_Characteristic_Callbacks());
+        txChar->addDescriptor(new BLE2902());
+        // txChar->setCallbacks(new My_Characteristic_Callbacks());
+
+
 
         service->start();
         BLEDevice::getAdvertising()->start();
