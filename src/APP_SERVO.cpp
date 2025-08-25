@@ -12,14 +12,14 @@
 #include <Arduino.h>
 #include <ESP32Servo.h>
 
-#define TEST_MODE 0  // Set to 0 to disable test mode
+#define TEST_MODE 1  // Set to 0 to disable test mode
 
 namespace //unamed (anonymous) namespace, everything inside this namespace is private to this.cpp file
 {  
     constexpr int SERVO_PIN = 18;
     constexpr int POT_PIN = 34;
     constexpr int ADC_MAX = 4096;
-    constexpr int ADC_MIN = 250;  
+    constexpr int ADC_MIN = 500;  
     constexpr int refresh_period = 20; // 50ms refresh period for the servo
 
     Timer servo_timer(refresh_period, true); // 50ms timer for servo refresh
@@ -69,10 +69,10 @@ void APP_SERVO::process()
         static bool rising = true;
 
         if (rising) {
-            fake_adc += 100;
+            fake_adc += 60;
             if (fake_adc >= ADC_MAX - ADC_MIN) rising = false;
         } else {
-            fake_adc -= 100;
+            fake_adc -= 60;
             if (fake_adc <= ADC_MIN) rising = true;
         }
 
@@ -80,8 +80,9 @@ void APP_SERVO::process()
         // -----------------------------------------
 #else       
         int val = analogRead(POT_PIN); //TODO: add lowpass filter to the analog read value
+        // int val = 4096/2;
 #endif
-        val = map(val, ADC_MIN, ADC_MAX - ADC_MIN, 60, 120);
+        val = map(val, ADC_MIN, ADC_MAX - ADC_MIN, 90, 150);
 
         Serial.print("val ");
         Serial.println(val);
