@@ -20,8 +20,8 @@ namespace
 
 
     constexpr uint8_t DATA_PIN = 4;
-    constexpr uint8_t NUM_LEDS = 24;
-    constexpr uint8_t BRIGHTNESS = 32;
+    constexpr uint8_t NUM_LEDS = 30;
+    constexpr uint8_t BRIGHTNESS = 255;
     constexpr uint8_t FRAMES_PER_SECOND = 120;
     constexpr uint8_t FRAME_DELAY_MS = (1000 + (FRAMES_PER_SECOND / 2)) / FRAMES_PER_SECOND; //round up to the nearest ms with integer division
 

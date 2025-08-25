@@ -23,6 +23,7 @@ namespace APP_BLE
 
 
         BLECharacteristic* servoChar = nullptr;
+        BLECharacteristic* ledChar = nullptr;
         BLECharacteristic* txChar = nullptr;
 
         class My_Characteristic_Callbacks : public BLECharacteristicCallbacks
@@ -43,11 +44,16 @@ namespace APP_BLE
                     // TODO: Pass angle to APP_SERVO
                     Serial.printf("[BLE] Servo set to: %s\n", value.c_str());
                 }
-                else if (pChar == txChar)
+                else if (pChar == ledChar)
                 {
                     // TODO: Pass pattern to APP_LED
                     Serial.printf("[BLE] LED pattern set to: %s\n", value.c_str());
                 }
+                // else if (pChar == txChar)
+                // {
+                //     // TODO: Pass pattern to APP_LED
+                //     Serial.printf("[BLE] LED pattern set to: %s\n", value.c_str());
+                // }
             }
         };
     }
@@ -58,7 +64,7 @@ namespace APP_BLE
         BLEServer* server = BLEDevice::createServer();
         BLEService* service = server->createService(SERVICE_UUID);
 
-        //Charactersitics are just containers of data in a BLE device
+        // Charactersitics are just containers of data in a BLE device
         // They are used to store and transmit data between the BLE device and the client
         // Creating characteristics and setting permissions
         // Write means that the characteristic is writable by the client
@@ -67,6 +73,9 @@ namespace APP_BLE
         // Characteristic Permissions ≠ Bidirectional Control
         servoChar = service->createCharacteristic(SERVO_CHAR_UUID, BLECharacteristic::PROPERTY_WRITE);
         servoChar->setCallbacks(new My_Characteristic_Callbacks());
+
+        ledChar = service->createCharacteristic(LED_CHAR_UUID, BLECharacteristic::PROPERTY_WRITE);
+        ledChar->setCallbacks(new My_Characteristic_Callbacks());
         
 
         txChar = service->createCharacteristic(LED_CHAR_UUID, BLECharacteristic::PROPERTY_NOTIFY);
