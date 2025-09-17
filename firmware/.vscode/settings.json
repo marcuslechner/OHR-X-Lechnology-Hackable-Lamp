@@ -1,0 +1,6 @@
+{
+    "idf.espIdfPathWin": "C:\\Users\\marcu\\esp\\v5.4\\esp-idf",
+    "idf.toolsPathWin": "C:\\Users\\marcu\\.espressif",
+    "idf.pythonInstallPath": "C:\\Users\\marcu\\.espressif\\tools\\idf-python\\3.11.2\\python.exe",
+    "idf.portWin": "COM6"
+}
