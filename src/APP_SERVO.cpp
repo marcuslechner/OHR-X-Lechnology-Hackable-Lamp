@@ -18,11 +18,18 @@ namespace //unamed (anonymous) namespace, everything inside this namespace is pr
 {  
     constexpr int SERVO_PIN = 18;
     constexpr int POT_PIN = 34;
-    constexpr int ADC_MAX = 4096;
-    constexpr int ADC_MIN = 500;  
+    constexpr int CLOSED_POSITION = 0;   // Servo position for fully closed
+    constexpr int OPEN_POSITION = 100;   // Servo position for fully ope
     constexpr int refresh_period = 20; // 50ms refresh period for the servo
 
+    enum State
+    {
+        IDLE,
+        MOVING
+    };
+
     Timer servo_timer(refresh_period, true); // 50ms timer for servo refresh
+    Timer servo_wait_timer(5000, true); // 2 second timer for servo wait
 
     ///------------about constexpr: qualifiers and specifiers------------------///
     //constexpr is known as a compile-time constant, it is evaluated at compile time and can be used in switch statements, array sizes, etc.
@@ -46,6 +53,15 @@ namespace //unamed (anonymous) namespace, everything inside this namespace is pr
     Servo myservo;
     int previous_val = 0;
     int steps_til_release = 0;
+    int desired_position = OPEN_POSITION/2; // Default to mid position
+    int current_position = desired_position; // Default to mid position
+}
+
+void setPosition(int position)
+{
+    if(position < CLOSED_POSITION) position = CLOSED_POSITION;
+    if(position > OPEN_POSITION) position = OPEN_POSITION;
+    desired_position = position;
 }
 
 void APP_SERVO::init()
@@ -53,56 +69,130 @@ void APP_SERVO::init()
     ESP32PWM::allocateTimer(0);
     myservo.setPeriodHertz(50);
     myservo.attach(SERVO_PIN, 500, 2400);
+    myservo.write(current_position);
 }
 
 void APP_SERVO::process()
 {
-    if(servo_timer.expired()) // Check if the timer has expired)
+    static State servo_state = IDLE;
+    switch (servo_state)
     {
-
-#if TEST_MODE
-        // --- TEST MODE: Simulated analog input ---
-        // This section simulates the behavior of a potentiometer using a simple algorithm.
-        // It creates a fake ADC value that oscillates between ADC_MIN and ADC_MAX.
-        
-        static int fake_adc = ADC_MIN;
-        static bool rising = true;
-
-        if (rising) {
-            fake_adc += 60;
-            if (fake_adc >= ADC_MAX - ADC_MIN) rising = false;
-        } else {
-            fake_adc -= 60;
-            if (fake_adc <= ADC_MIN) rising = true;
-        }
-
-        int val = fake_adc;
-        // -----------------------------------------
-#else       
-        int val = analogRead(POT_PIN); //TODO: add lowpass filter to the analog read value
-        // int val = 4096/2;
-#endif
-        val = map(val, ADC_MIN, ADC_MAX - ADC_MIN, 90, 150);
-
-        Serial.print("val ");
-        Serial.println(val);
-
-        if (abs(val - previous_val) > 1)
-        {
-            myservo.write(val);
-            previous_val = val;
-            steps_til_release = 0;
-        }
-        else
-        {
-            steps_til_release++;
-            if (steps_til_release > 20)
+        case IDLE:
+            if (desired_position != current_position)
             {
-                myservo.release();
-                //TODO: this will just count up to 20 then reset the counter
-                steps_til_release = 0; // Reset the counter after releasing
-                Serial.println("Servo released due to inactivity.");
+                servo_state = MOVING;
+                servo_wait_timer.start(); // Start the wait timer when we begin moving
+                servo_timer.start(); // Start the servo refresh timer
             }
-        }
+            else
+            {   
+                myservo.release(); // Release the servo if at desired position
+                if(servo_wait_timer.expired())
+                {
+                    //make up new position
+                    desired_position = desired_position + 30;
+                    desired_position = desired_position % OPEN_POSITION;
+                }
+            }
+            break;
+
+        case MOVING:
+            if(servo_timer.expired()) // Check if the timer has expired)
+            {
+
+                // This section simulates the behavior of a potentiometer using a simple algorithm.
+                // It creates a fake ADC value that oscillates between ADC_MIN and ADC_MAX.
+                
+                static int fake_adc = CLOSED_POSITION;
+                static bool rising = true;
+                if(desired_position > current_position) 
+                {
+                    current_position++;
+                } 
+                else if(desired_position < current_position) 
+                {
+                    current_position--;
+                }
+            
+                Serial.print("current_position ");
+                Serial.println(current_position);
+                int val = current_position;
+                // -----------------------------------------
+
+                val = map(val, CLOSED_POSITION, OPEN_POSITION, 105, 135);
+
+                Serial.print("val ");
+                Serial.println(val);
+                myservo.write(val);
+            }
+            if(current_position == desired_position)
+            {
+                servo_state = IDLE;
+                servo_wait_timer.start(); // Start the wait timer when we reach the desired position
+                servo_timer.stop(); // Stop the servo refresh timer
+            }
+
+
+            break;
     }
+
+
+    // if((desired_position != current_position) && (servo_wait_timer.expired())) // Only process if the desired position is different from the current position and the timer is running
+    // {
+    //     if(servo_timer.expired()) // Check if the timer has expired)
+    //     {
+
+    //         // This section simulates the behavior of a potentiometer using a simple algorithm.
+    //         // It creates a fake ADC value that oscillates between ADC_MIN and ADC_MAX.
+            
+    //         static int fake_adc = CLOSED_POSITION;
+    //         static bool rising = true;
+    //         if(desired_position > current_position) 
+    //         {
+    //             current_position++;
+    //         } 
+    //         else if(desired_position < current_position) 
+    //         {
+    //             current_position--;
+    //         }
+           
+    //         Serial.print("current_position ");
+    //         Serial.println(current_position);
+    //         int val = current_position;
+    //         // -----------------------------------------
+
+    //         val = map(val, CLOSED_POSITION, OPEN_POSITION, 90, 150);
+
+    //         // Serial.print("val ");
+    //         // Serial.println(val);
+    //         myservo.write(val);
+
+    //         // if (abs(val - previous_val) > 1)
+    //         // {
+    //         //     myservo.write(val);
+    //         //     previous_val = val;
+    //         //     steps_til_release = 0;
+    //         // }
+    //         // else
+    //         // {
+    //         //     steps_til_release++;
+    //         //     if (steps_til_release > 20)
+    //         //     {
+    //         //         myservo.release();
+    //         //         //TODO: this will just count up to 20 then reset the counter
+    //         //         steps_til_release = 0; // Reset the counter after releasing
+    //         //         Serial.println("Servo released due to inactivity.");
+    //         //     }
+    //         // }
+    //     }
+    // }
+    // else
+    // {
+    //     // Serial.println();
+    //     myservo.release(); // Release the servo if at desired position
+    //     desired_position = desired_position + 20;
+    //     desired_position = desired_position % OPEN_POSITION;
+    //     Serial.println(desired_position);
+
+    // }
 }
