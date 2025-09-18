@@ -18,6 +18,13 @@
 # =========================
 # KiCad
 # =========================
+
+# Keep schematics, ignore layout
+*.kicad_pcb
+*.gbr
+*.drl
+*.pos
+
 # Backup & autosave files
 *.bak
 *.kicad_prl
