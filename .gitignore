@@ -21,6 +21,7 @@
 
 # Keep schematics, ignore layout
 *.kicad_pcb
+*.kicad_pro
 *.gbr
 *.drl
 *.pos
@@ -40,6 +41,8 @@
 *.drl
 *.pos
 *.zip
+hardware/output
+hardware/graphics
 
 # Simulation files
 *.raw
