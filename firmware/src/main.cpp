@@ -37,19 +37,19 @@ void setup()
 {
     delay(3000);
     Serial.begin(115200);
-
+    delay(1000);
     Serial.println("Starting up...");
     APP_BLINKY::init();   
-    // APP_BLE::init();
-    APP_LED::init();
-    APP_SERVO::init();
+    APP_BLE::init();
+    // APP_LED::init();
+    // APP_SERVO::init();
 
 }
 
 void loop()
 {
     APP_BLINKY::process();
-    // APP_BLE::process();
-    APP_LED::process();
-    APP_SERVO::process();
+    APP_BLE::process();
+    // APP_LED::process();
+    // APP_SERVO::process();
 }

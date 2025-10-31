@@ -29,7 +29,7 @@ namespace //unamed (anonymous) namespace, everything inside this namespace is pr
     };
 
     Timer servo_timer(refresh_period, true); // 50ms timer for servo refresh
-    Timer servo_wait_timer(5000, true); // 2 second timer for servo wait
+    Timer servo_wait_timer(1000, true); // 2 second timer for servo wait
 
     ///------------about constexpr: qualifiers and specifiers------------------///
     //constexpr is known as a compile-time constant, it is evaluated at compile time and can be used in switch statements, array sizes, etc.
@@ -90,7 +90,7 @@ void APP_SERVO::process()
                 if(servo_wait_timer.expired())
                 {
                     //make up new position
-                    desired_position = desired_position + 30;
+                    desired_position = desired_position + (OPEN_POSITION/2);
                     desired_position = desired_position % OPEN_POSITION;
                 }
             }
@@ -119,7 +119,7 @@ void APP_SERVO::process()
                 int val = current_position;
                 // -----------------------------------------
 
-                val = map(val, CLOSED_POSITION, OPEN_POSITION, 105, 135);
+                val = map(val, CLOSED_POSITION, OPEN_POSITION, 0, 180);
 
                 Serial.print("val ");
                 Serial.println(val);
