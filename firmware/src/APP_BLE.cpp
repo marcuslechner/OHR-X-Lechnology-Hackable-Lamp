@@ -14,30 +14,35 @@ namespace APP_BLE
 {
     namespace  //TODO: come back and comment code to lock in ble knowledge and understanding
     {
-        constexpr char DEVICE_NAME[] = "HackableLamp";
+        constexpr char DEVICE_NAME[]  = "HackableLamp";
+
+        // Keep your existing service UUID (Nordic UART style)
         constexpr char SERVICE_UUID[] = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
-        constexpr char RX_CHAR_UUID[]  = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"; // Write from central -> peripheral
-        constexpr char TX_CHAR_UUID[]  = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"; // Notify peripheral -> central
 
-        // UUIDs are arbitrary
+        // Optional UART RX/TX (debug/legacy)
+        constexpr char RX_CHAR_UUID[] = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"; // Write central -> peripheral
+        constexpr char TX_CHAR_UUID[] = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"; // Notify peripheral -> central
 
-        // Optional app-specific characteristic UUIDs if you still want separate knobs:
-        constexpr char SERVO_CHAR_UUID[] = "f6c2b240-1b0a-46d5-9c5a-9b4a22d7e201"; // Write
-        constexpr char LED_CHAR_UUID[]   = "f6c2b240-1b0a-46d5-9c5a-9b4a22d7e202"; // Write
+        // New typed control characteristics
+        constexpr char SHUTTER_CHAR_UUID[] = "f6c2b240-1b0a-46d5-9c5a-9b4a22d7e301"; // 1 byte 0-100
+        constexpr char ANIM_CHAR_UUID[]    = "f6c2b240-1b0a-46d5-9c5a-9b4a22d7e303"; // 1 byte animId
+        constexpr char RGB_CHAR_UUID[]     = "f6c2b240-1b0a-46d5-9c5a-9b4a22d7e302"; // 3 bytes R,G,B
 
-        BLECharacteristic* rxChar = nullptr; // write-only
-        BLECharacteristic* txChar = nullptr; // notify
-        BLECharacteristic* servoChar = nullptr; // write-only (optional)
-        BLECharacteristic* ledChar = nullptr;   // write-only (optional)
 
+
+        BLECharacteristic* rxChar      = nullptr;
+        BLECharacteristic* txChar      = nullptr;
+
+        BLECharacteristic* shutterChar = nullptr;
+        BLECharacteristic* rgbChar     = nullptr;
+        BLECharacteristic* animChar    = nullptr;
+
+       
         class My_Characteristic_Callbacks : public BLECharacteristicCallbacks
         {
             void onWrite(BLECharacteristic* pChar) override
             {
-                
                 std::string value = pChar->getValue();
-
-                Serial.println("[BLE] Characteristic written");
 
                 if (value.empty())
                 {
@@ -45,46 +50,79 @@ namespace APP_BLE
                     return;
                 }
 
-                if(txChar)
+                // Echo any write to TX notify (optional, nice for debugging)
+                if (txChar)
                 {
                     txChar->setValue(value);
                     txChar->notify();
-                    // Serial.printf("[BLE] LED pattern set to: %s\n", value.c_str());
                 }
 
+                // ----------- Typed Characteristics -----------
+
+                if (pChar == shutterChar)
+                {
+                    // Expect 1 byte: percent 0-100
+                    uint8_t percent = static_cast<uint8_t>(value[0]);
+                    if (percent > 100) percent = 100;
+
+                    Serial.printf("[BLE] Shutter percent: %u\n", percent);
+
+                    // TODO: APP_SERVO / shutters
+                    // APP_SHUTTER::setPercent(percent);
+                    return;
+                }
+
+                if (pChar == animChar)
+                {
+                    // Expect 1 byte anim ID
+                    uint8_t animId = static_cast<uint8_t>(value[0]);
+
+                    Serial.printf("[BLE] Animation ID: %u\n", animId);
+
+                    // TODO: switch FastLED pattern
+                    // APP_LED::setPattern(animId);
+                    return;
+                }
+
+                if (pChar == rgbChar)
+                {
+                    // Expect 3 bytes: R,G,B
+                    if (value.size() < 3)
+                    {
+                        Serial.println("[BLE] RGB write too short");
+                        return;
+                    }
+
+                    uint8_t r = static_cast<uint8_t>(value[0]);
+                    uint8_t g = static_cast<uint8_t>(value[1]);
+                    uint8_t b = static_cast<uint8_t>(value[2]);
+
+                    Serial.printf("[BLE] RGB: %u, %u, %u\n", r, g, b);
+
+                    // TODO: FastLED set color
+                    // APP_LED::setSolidColor(r, g, b);
+                    return;
+                }
+
+                // ----------- Optional UART-style RX parsing -----------
 
                 if (pChar == rxChar)
                 {
                     Serial.printf("[BLE] RX: %s\n", value.c_str());
 
-                    // Simple command parsing: SERVO:90 or LED:rainbow
                     if (value.rfind("SERVO:", 0) == 0)
                     {
                         const char* arg = value.c_str() + 6;
                         Serial.printf("[BLE] Servo set to: %s\n", arg);
-                        // TODO: APP_SERVO::setAngle(atoi(arg));
+                        // APP_SERVO::setAngle(atoi(arg));
                     }
                     else if (value.rfind("LED:", 0) == 0)
                     {
                         const char* arg = value.c_str() + 4;
                         Serial.printf("[BLE] LED pattern set to: %s\n", arg);
-                        // TODO: APP_LED::setPattern(arg);
+                        // APP_LED::setPattern(arg);
                     }
                 }
-                
-                if (pChar == servoChar)
-                {
-                    int angle = atoi(value.c_str());
-                    Serial.printf("[BLE] Servo set to: %d\n", angle);
-                    // TODO: APP_SERVO::setAngle(atoi(value.c_str()));
-                }
-                else if (pChar == ledChar)
-                {
-                    int patternId = atoi(value.c_str());
-                    Serial.printf("[BLE] LED pattern set to: %d\n", patternId);
-                    // TODO: APP_LED::setPattern(value.c_str());
-                }
-
             }
         };
 
@@ -94,14 +132,15 @@ namespace APP_BLE
             {
                 Serial.println("[BLE] Central connected");
             }
+
             void onDisconnect(BLEServer* s) override
             {
                 Serial.println("[BLE] Central disconnected, restarting advertising");
                 s->startAdvertising();
             }
         };
-
     }
+
 
     void init()
     {
@@ -110,11 +149,9 @@ namespace APP_BLE
         BLEServer* server = BLEDevice::createServer();
         server->setCallbacks(new My_ServerCallbacks());
 
-
         BLEService* service = server->createService(SERVICE_UUID);
 
-
-        // UART-style RX (Write) and TX (Notify)
+        // ---------- Optional UART RX/TX ----------
         rxChar = service->createCharacteristic(
             RX_CHAR_UUID,
             BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR
@@ -125,36 +162,34 @@ namespace APP_BLE
             TX_CHAR_UUID,
             BLECharacteristic::PROPERTY_NOTIFY
         );
-        txChar->addDescriptor(new BLE2902()); // enables CCCD so central can turn on notifications
+        txChar->addDescriptor(new BLE2902());
 
+        // ---------- Typed control characteristics ----------
 
-        // Charactersitics are just containers of data in a BLE device
-        // They are used to store and transmit data between the BLE device and the client
-        // Creating characteristics and setting permissions
-        // Write means that the characteristic is writable by the client
-        // attaches to the service
-        // BLE spec does not enforce data types, its just seen as a byte array
-        // Characteristic Permissions ≠ Bidirectional Control
-        servoChar = service->createCharacteristic(SERVO_CHAR_UUID, BLECharacteristic::PROPERTY_WRITE_NR);
-        // setting up function callbacks to process the data that is written to the characteristic
-        servoChar->setCallbacks(new My_Characteristic_Callbacks());
+        shutterChar = service->createCharacteristic(
+            SHUTTER_CHAR_UUID,
+            BLECharacteristic::PROPERTY_WRITE_NR
+        );
+        shutterChar->setCallbacks(new My_Characteristic_Callbacks());
 
-        ledChar = service->createCharacteristic(LED_CHAR_UUID, BLECharacteristic::PROPERTY_WRITE_NR);
-        ledChar->setCallbacks(new My_Characteristic_Callbacks());
-        
+        rgbChar = service->createCharacteristic(
+            RGB_CHAR_UUID,
+            BLECharacteristic::PROPERTY_WRITE_NR
+        );
+        rgbChar->setCallbacks(new My_Characteristic_Callbacks());
 
-
+        animChar = service->createCharacteristic(
+            ANIM_CHAR_UUID,
+            BLECharacteristic::PROPERTY_WRITE // with response
+        );
+        animChar->setCallbacks(new My_Characteristic_Callbacks());
 
         service->start();
 
-
-        BLEDevice::getAdvertising()->start();
-
-        // Advertise the service UUID so scanner apps find it quickly
         BLEAdvertising* adv = BLEDevice::getAdvertising();
         adv->addServiceUUID(SERVICE_UUID);
         adv->setScanResponse(true);
-        adv->setMinPreferred(0x06); // helps iOS
+        adv->setMinPreferred(0x06);
         adv->setMinPreferred(0x12);
         BLEDevice::startAdvertising();
 
