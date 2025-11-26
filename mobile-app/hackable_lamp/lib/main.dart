@@ -1,122 +1,318 @@
 import 'package:flutter/material.dart';
 
-void main() {
+void main()
+{
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatelessWidget
+{
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context)
+  {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'OHR x Lechnology Hackable Lamp',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'OHR x Lechnology Hackable Lamp'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
+class MyHomePage extends StatefulWidget
+{
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _MyHomePageState extends State<MyHomePage>
+{
+  double _shutterPercent = 0.0; // 0 - 100
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  // Popular FastLED-style animations
+  final List<String> _animations = [
+    'Solid Color',
+    'Rainbow',
+    'Rainbow w/ Glitter',
+    'Confetti',
+    'Sinelon',
+    'BPM',
+    'Juggle',
+    'Fire',
+    'Twinkle',
+    'Cylon / Larson Scanner',
+    'Lightning',
+    'Color Waves',
+    'Noise / Perlin',
+  ];
+
+  int _selectedAnimationIndex = 0;
+  late final FixedExtentScrollController _animController;
+
+  int _r = 255;
+  int _g = 120;
+  int _b = 0;
+
+  Color get _currentColor => Color.fromARGB(255, _r, _g, _b);
+  String get _selectedAnimation => _animations[_selectedAnimationIndex];
+
+  @override
+  void initState()
+  {
+    super.initState();
+    _animController = FixedExtentScrollController(initialItem: _selectedAnimationIndex);
   }
 
   @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+  void dispose()
+  {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context)
+  {
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+
+            // ---------------- Shutter Slider ----------------
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Shutters',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${_shutterPercent.toStringAsFixed(0)}%',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    Slider(
+                      min: 0,
+                      max: 100,
+                      divisions: 100,
+                      label: _shutterPercent.toStringAsFixed(0),
+                      value: _shutterPercent,
+                      onChanged: (v)
+                      {
+                        setState(() => _shutterPercent = v);
+
+                        // TODO: send shutter command to device here
+                        // sendShutterPercent(_shutterPercent.toInt());
+                      },
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: const [
+                        Text('Closed (0%)'),
+                        Text('Open (100%)'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ---------------- Animation Wheel ----------------
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Animation',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+
+                    SizedBox(
+                      height: 160,
+                      child: ListWheelScrollView.useDelegate(
+                        controller: _animController,
+                        itemExtent: 40,
+                        physics: const FixedExtentScrollPhysics(),
+                        diameterRatio: 1.2,
+                        perspective: 0.002,
+                        onSelectedItemChanged: (i)
+                        {
+                          setState(() => _selectedAnimationIndex = i);
+
+                          // TODO: send animation selection to device
+                          // sendAnimation(_animations[i]);
+                        },
+                        childDelegate: ListWheelChildBuilderDelegate(
+                          childCount: _animations.length,
+                          builder: (context, i)
+                          {
+                            final bool selected = i == _selectedAnimationIndex;
+                            return Center(
+                              child: Text(
+                                _animations[i],
+                                style: TextStyle(
+                                  fontSize: selected ? 18 : 15,
+                                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                                  color: selected
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+                    Text(
+                      'Selected: $_selectedAnimation',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    ElevatedButton.icon(
+                      onPressed: ()
+                      {
+                        // TODO: send selected animation now
+                        // sendAnimation(_selectedAnimation);
+                      },
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text('Apply Animation'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ---------------- RGB Picker ----------------
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'RGB Color Picker',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+
+                    Container(
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: _currentColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.black12),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    _rgbSlider(
+                      label: 'R',
+                      value: _r,
+                      activeColor: Colors.red,
+                      onChanged: (v) => setState(() => _r = v),
+                    ),
+                    _rgbSlider(
+                      label: 'G',
+                      value: _g,
+                      activeColor: Colors.green,
+                      onChanged: (v) => setState(() => _g = v),
+                    ),
+                    _rgbSlider(
+                      label: 'B',
+                      value: _b,
+                      activeColor: Colors.blue,
+                      onChanged: (v) => setState(() => _b = v),
+                    ),
+
+                    const SizedBox(height: 8),
+                    Text(
+                      'RGB($_r, $_g, $_b)',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    ElevatedButton.icon(
+                      onPressed: ()
+                      {
+                        // TODO: send RGB to device here
+                        // sendRgb(_r, _g, _b);
+                      },
+                      icon: const Icon(Icons.send),
+                      label: const Text('Send Color'),
+                    )
+                  ],
+                ),
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+    );
+  }
+
+  Widget _rgbSlider({
+    required String label,
+    required int value,
+    required Color activeColor,
+    required ValueChanged<int> onChanged,
+  })
+  {
+    return Row(
+      children: [
+        SizedBox(
+          width: 18,
+          child: Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        Expanded(
+          child: Slider(
+            min: 0,
+            max: 255,
+            divisions: 255,
+            activeColor: activeColor,
+            value: value.toDouble(),
+            label: value.toString(),
+            onChanged: (v) => onChanged(v.round()),
+          ),
+        ),
+        SizedBox(
+          width: 40,
+          child: Text(value.toString()),
+        )
+      ],
     );
   }
 }

@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"dart.flutterSdkPath": "C:\\flutter",
+		"dart.previewFlutterUiGuides": true,
+		"dart.previewHotReloadOnSaveWatcher": true,
+		"editor.formatOnSave": true,
+		"files.exclude": {
+			"**/.dart_tool": true,
+			"**/build": true
+		}
+	}
+}
