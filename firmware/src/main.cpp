@@ -42,7 +42,7 @@ void setup()
     APP_BLINKY::init();   
     APP_BLE::init();
     // APP_LED::init();
-    // APP_SERVO::init();
+    APP_SERVO::init();
 
 }
 
@@ -51,5 +51,5 @@ void loop()
     APP_BLINKY::process();
     APP_BLE::process();
     // APP_LED::process();
-    // APP_SERVO::process();
+    APP_SERVO::process();
 }

@@ -57,7 +57,13 @@ namespace //unamed (anonymous) namespace, everything inside this namespace is pr
     int current_position = desired_position; // Default to mid position
 }
 
-void setPosition(int position)
+
+/**
+ *  @brief Sets the desired servo position in percent (0-100)
+ *  @param position Desired position in percent (0 = closed, 100 = open)
+ */
+
+void APP_SERVO::setPosition(int position)
 {
     if(position < CLOSED_POSITION) position = CLOSED_POSITION;
     if(position > OPEN_POSITION) position = OPEN_POSITION;
@@ -75,31 +81,33 @@ void APP_SERVO::init()
 void APP_SERVO::process()
 {
     static State servo_state = IDLE;
-    switch (servo_state)
+
+    if(servo_timer.expired()) // Check if the timer has expired)
     {
-        case IDLE:
-            if (desired_position != current_position)
-            {
-                servo_state = MOVING;
-                servo_wait_timer.start(); // Start the wait timer when we begin moving
-                servo_timer.start(); // Start the servo refresh timer
-            }
-            else
-            {   
-                myservo.release(); // Release the servo if at desired position
-                if(servo_wait_timer.expired())
+        servo_timer.start(); // Start the servo refresh timer
+        
+        switch (servo_state)
+        {
+            case IDLE:
+                if (desired_position != current_position)
                 {
-                    //make up new position
-                    desired_position = desired_position + (OPEN_POSITION/2);
-                    desired_position = desired_position % OPEN_POSITION;
+                    servo_state = MOVING;
+                    // servo_wait_timer.start(); // Start the wait timer when we begin moving
+                    // servo_timer.start(); // Start the servo refresh timer
                 }
-            }
-            break;
+                else
+                {   
+                    myservo.release(); // Release the servo if at desired position
+                    // if(servo_wait_timer.expired())
+                    // {
+                    //     //make up new position
+                    //     desired_position = desired_position + (OPEN_POSITION/2);
+                    //     desired_position = desired_position % OPEN_POSITION;
+                    // }
+                }
+                break;
 
-        case MOVING:
-            if(servo_timer.expired()) // Check if the timer has expired)
-            {
-
+            case MOVING:
                 // This section simulates the behavior of a potentiometer using a simple algorithm.
                 // It creates a fake ADC value that oscillates between ADC_MIN and ADC_MAX.
                 
@@ -124,75 +132,16 @@ void APP_SERVO::process()
                 Serial.print("val ");
                 Serial.println(val);
                 myservo.write(val);
-            }
-            if(current_position == desired_position)
-            {
-                servo_state = IDLE;
-                servo_wait_timer.start(); // Start the wait timer when we reach the desired position
-                servo_timer.stop(); // Stop the servo refresh timer
-            }
+                
+                if(current_position == desired_position)
+                {
+                    servo_state = IDLE;
+                    // servo_wait_timer.start(); // Start the wait timer when we reach the desired position
+                    // servo_timer.stop(); // Stop the servo refresh timer
+                }
 
 
-            break;
+                break;
+        }
     }
-
-
-    // if((desired_position != current_position) && (servo_wait_timer.expired())) // Only process if the desired position is different from the current position and the timer is running
-    // {
-    //     if(servo_timer.expired()) // Check if the timer has expired)
-    //     {
-
-    //         // This section simulates the behavior of a potentiometer using a simple algorithm.
-    //         // It creates a fake ADC value that oscillates between ADC_MIN and ADC_MAX.
-            
-    //         static int fake_adc = CLOSED_POSITION;
-    //         static bool rising = true;
-    //         if(desired_position > current_position) 
-    //         {
-    //             current_position++;
-    //         } 
-    //         else if(desired_position < current_position) 
-    //         {
-    //             current_position--;
-    //         }
-           
-    //         Serial.print("current_position ");
-    //         Serial.println(current_position);
-    //         int val = current_position;
-    //         // -----------------------------------------
-
-    //         val = map(val, CLOSED_POSITION, OPEN_POSITION, 90, 150);
-
-    //         // Serial.print("val ");
-    //         // Serial.println(val);
-    //         myservo.write(val);
-
-    //         // if (abs(val - previous_val) > 1)
-    //         // {
-    //         //     myservo.write(val);
-    //         //     previous_val = val;
-    //         //     steps_til_release = 0;
-    //         // }
-    //         // else
-    //         // {
-    //         //     steps_til_release++;
-    //         //     if (steps_til_release > 20)
-    //         //     {
-    //         //         myservo.release();
-    //         //         //TODO: this will just count up to 20 then reset the counter
-    //         //         steps_til_release = 0; // Reset the counter after releasing
-    //         //         Serial.println("Servo released due to inactivity.");
-    //         //     }
-    //         // }
-    //     }
-    // }
-    // else
-    // {
-    //     // Serial.println();
-    //     myservo.release(); // Release the servo if at desired position
-    //     desired_position = desired_position + 20;
-    //     desired_position = desired_position % OPEN_POSITION;
-    //     Serial.println(desired_position);
-
-    // }
 }

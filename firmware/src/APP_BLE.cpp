@@ -10,6 +10,8 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
+#include "APP_SERVO.hpp"
+
 namespace APP_BLE
 {
     namespace  //TODO: come back and comment code to lock in ble knowledge and understanding
@@ -66,6 +68,8 @@ namespace APP_BLE
                     if (percent > 100) percent = 100;
 
                     Serial.printf("[BLE] Shutter percent: %u\n", percent);
+
+                    APP_SERVO::setPosition(percent);
 
                     // TODO: APP_SERVO / shutters
                     // APP_SHUTTER::setPercent(percent);
