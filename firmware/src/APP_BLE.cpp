@@ -11,6 +11,7 @@
 #include <BLE2902.h>
 
 #include "APP_SERVO.hpp"
+#include "APP_LED.hpp"
 
 namespace APP_BLE
 {
@@ -84,7 +85,7 @@ namespace APP_BLE
                     Serial.printf("[BLE] Animation ID: %u\n", animId);
 
                     // TODO: switch FastLED pattern
-                    // APP_LED::setPattern(animId);
+                    APP_LED::setAnimation(animId);
                     return;
                 }
 
@@ -104,7 +105,7 @@ namespace APP_BLE
                     Serial.printf("[BLE] RGB: %u, %u, %u\n", r, g, b);
 
                     // TODO: FastLED set color
-                    // APP_LED::setSolidColor(r, g, b);
+                    APP_LED::setSolidColor(r, g, b);
                     return;
                 }
 
