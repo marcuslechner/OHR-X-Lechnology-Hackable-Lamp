@@ -206,6 +206,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Color get _currentColor => Color.fromARGB(255, _r, _g, _b);
 
   final List<String> _animations = [
+    'Off',
     'Solid Color',
     'Rainbow',
     'Rainbow w/ Glitter',
@@ -222,6 +223,7 @@ class _MyHomePageState extends State<MyHomePage> {
   ];
 
   final Map<String, int> _animIds = {
+    'Off': 0, // handled specially in app
     'Solid Color': 0,
     'Rainbow': 1,
     'Rainbow w/ Glitter': 2,
@@ -242,6 +244,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final Throttler shutterThrottle = Throttler(30);
   final Throttler rgbThrottle = Throttler(30);
+  final Throttler animThrottle = Throttler(80);
 
   @override
   void initState() {
@@ -280,6 +283,25 @@ class _MyHomePageState extends State<MyHomePage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text("Disconnected")));
+  }
+
+  void _ensureSolidColorSelectedAndSendAnim() {
+    final solidIndex = _animations.indexOf('Solid Color');
+    if (solidIndex == -1) return;
+
+    if (_selectedAnimationIndex != solidIndex) {
+      setState(() => _selectedAnimationIndex = solidIndex);
+      _animController.animateToItem(
+        solidIndex,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    }
+
+    if (!ble.isConnected) return;
+
+    final solidId = _animIds['Solid Color'] ?? 0;
+    animThrottle(() => ble.sendAnimId(solidId));
   }
 
   @override
@@ -418,6 +440,29 @@ class _MyHomePageState extends State<MyHomePage> {
                         perspective: 0.002,
                         onSelectedItemChanged: (i) {
                           setState(() => _selectedAnimationIndex = i);
+
+                          if (!ble.isConnected) return;
+
+                          final name = _animations[i];
+
+                          if (name == 'Off') {
+                            // Off = Solid Color + RGB(0,0,0)
+                            final id = _animIds['Off'] ?? 0;
+                            animThrottle(() async {
+                              await ble.sendAnimId(id);
+                              await ble.sendRgb(0, 0, 0);
+                            });
+                          } else if (name == 'Solid Color') {
+                            // When scrolling to Solid Color, apply current picker color
+                            final id = _animIds['Solid Color'] ?? 0;
+                            animThrottle(() async {
+                              await ble.sendAnimId(id);
+                              await ble.sendRgb(_r, _g, _b);
+                            });
+                          } else {
+                            final id = _animIds[name] ?? 0;
+                            animThrottle(() => ble.sendAnimId(id));
+                          }
                         },
                         childDelegate: ListWheelChildBuilderDelegate(
                           childCount: _animations.length,
@@ -443,31 +488,10 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                       ),
                     ),
-
-                    const SizedBox(height: 8),
-                    Text(
-                      'Selected: ${_animations[_selectedAnimationIndex]}',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    ElevatedButton.icon(
-                      onPressed: connected
-                          ? () {
-                              final name = _animations[_selectedAnimationIndex];
-                              final id = _animIds[name] ?? 0;
-                              ble.sendAnimId(id);
-                            }
-                          : null,
-                      icon: const Icon(Icons.play_arrow),
-                      label: const Text('Apply Animation'),
-                    ),
                   ],
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
 
             // ---------------- RGB Picker ----------------
@@ -504,6 +528,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       onChanged: connected
                           ? (v) {
                               setState(() => _r = v);
+                              _ensureSolidColorSelectedAndSendAnim();
                               rgbThrottle(() => ble.sendRgb(_r, _g, _b));
                             }
                           : null,
@@ -515,6 +540,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       onChanged: connected
                           ? (v) {
                               setState(() => _g = v);
+                              _ensureSolidColorSelectedAndSendAnim();
                               rgbThrottle(() => ble.sendRgb(_r, _g, _b));
                             }
                           : null,
@@ -526,6 +552,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       onChanged: connected
                           ? (v) {
                               setState(() => _b = v);
+                              _ensureSolidColorSelectedAndSendAnim();
                               rgbThrottle(() => ble.sendRgb(_r, _g, _b));
                             }
                           : null,
