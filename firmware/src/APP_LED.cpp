@@ -164,7 +164,7 @@ namespace
         gCurrentPattern = (gCurrentPattern + 1) % (sizeof(gPatterns) / sizeof(gPatterns[0]));
     }
 
-    void fire()
+        void fire()
     {
         // simple ember-like fire: reds/oranges that flicker
         fadeToBlackBy(leds, NUM_LEDS, 40);
